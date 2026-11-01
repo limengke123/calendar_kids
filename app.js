@@ -666,19 +666,27 @@
     els.importBtn.addEventListener('click', function () { els.importFile.click(); });
     els.importFile.addEventListener('change', importJson);
 
-    els.showHolidays.addEventListener('change', updateHolidayPickerState);
-    els.selectAllHolidays.addEventListener('click', function () {
-      els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
-        checkbox.checked = true;
+    if (els.showHolidays) {
+      els.showHolidays.addEventListener('change', updateHolidayPickerState);
+    }
+    if (els.selectAllHolidays) {
+      els.selectAllHolidays.addEventListener('click', function () {
+        if (!els.holidayList) return;
+        els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+          checkbox.checked = true;
+        });
+        updateHolidayPickerState();
       });
-      updateHolidayPickerState();
-    });
-    els.clearHolidays.addEventListener('click', function () {
-      els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
-        checkbox.checked = false;
+    }
+    if (els.clearHolidays) {
+      els.clearHolidays.addEventListener('click', function () {
+        if (!els.holidayList) return;
+        els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+          checkbox.checked = false;
+        });
+        updateHolidayPickerState();
       });
-      updateHolidayPickerState();
-    });
+    }
 
     els.emojiRow.addEventListener('click', function (event) {
       var button = event.target.closest('.emoji-btn');
@@ -776,6 +784,7 @@
   }
 
   function buildHolidayPicker() {
+    if (!els.holidayList) return;
     els.holidayList.innerHTML = HOLIDAY_DEFS.map(function (def) {
       return '<label class="holiday-option">'
         + '<input type="checkbox" value="' + escapeAttr(def.key) + '">'
@@ -788,6 +797,7 @@
   }
 
   function syncHolidayPicker() {
+    if (!els.holidayList) return;
     var hidden = state.settings.hiddenHolidays || [];
     els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
       checkbox.checked = hidden.indexOf(checkbox.value) === -1;
@@ -796,11 +806,17 @@
   }
 
   function updateHolidayPickerState() {
+    if (!els.holidayList) return;
     var boxes = els.holidayList.querySelectorAll('input[type="checkbox"]');
     var checked = 0;
     boxes.forEach(function (checkbox) { if (checkbox.checked) checked += 1; });
-    els.holidayCount.textContent = checked + ' / ' + boxes.length + ' 个显示';
-    els.holidayPicker.classList.toggle('hidden', !els.showHolidays.checked);
+    if (els.holidayCount) {
+      els.holidayCount.textContent = checked + ' / ' + boxes.length + ' 个显示';
+    }
+    if (els.holidayPicker) {
+      var masterOn = !els.showHolidays || els.showHolidays.checked;
+      els.holidayPicker.classList.toggle('hidden', !masterOn);
+    }
   }
 
   function openAddDialog(dateString) {
@@ -934,8 +950,10 @@
 
   function openSettings() {
     els.childName.value = state.childName;
-    els.showHolidays.checked = state.settings.showHolidays !== false;
-    syncHolidayPicker();
+    if (els.showHolidays) {
+      els.showHolidays.checked = state.settings.showHolidays !== false;
+    }
+    if (els.holidayList) syncHolidayPicker();
     openDialog(els.settingsDialog);
     window.setTimeout(function () { els.childName.focus(); els.childName.select(); }, 80);
   }
@@ -944,11 +962,15 @@
     event.preventDefault();
     var name = els.childName.value.trim().replace(/\s+/g, ' ').slice(0, 12);
     state.childName = name || DEFAULT_NAME;
-    state.settings.showHolidays = els.showHolidays.checked;
-    state.settings.hiddenHolidays = [];
-    els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
-      if (!checkbox.checked) state.settings.hiddenHolidays.push(checkbox.value);
-    });
+    if (els.showHolidays) {
+      state.settings.showHolidays = els.showHolidays.checked;
+    }
+    if (els.holidayList) {
+      state.settings.hiddenHolidays = [];
+      els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+        if (!checkbox.checked) state.settings.hiddenHolidays.push(checkbox.value);
+      });
+    }
     var saved = saveState();
     closeDialog(els.settingsDialog);
     render();
