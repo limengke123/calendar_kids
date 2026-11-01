@@ -23,6 +23,7 @@
     todayJump: document.getElementById('today-jump'),
 
     settingsBtn: document.getElementById('settings-btn'),
+    imageBtn: document.getElementById('image-btn'),
     printBtn: document.getElementById('print-btn'),
     addBtn: document.getElementById('add-btn'),
 
@@ -657,6 +658,7 @@
     });
 
     els.settingsBtn.addEventListener('click', openSettings);
+    if (els.imageBtn) els.imageBtn.addEventListener('click', exportImage);
     els.printBtn.addEventListener('click', printCalendar);
     els.eventForm.addEventListener('submit', submitEventForm);
     els.deleteEvent.addEventListener('click', deleteCurrentEvent);
@@ -1038,6 +1040,59 @@
       if (saved) showToast('已导入 ' + imported.length + ' 个期待');
     }).catch(function () {
       showToast('导入失败：请选择正确的 JSON 备份');
+    });
+  }
+
+  /* ---------- image export ---------- */
+
+  function exportImage() {
+    if (!window.htmlToImage) {
+      showToast('图片导出组件未加载，请刷新页面或改用打印 / PDF');
+      return;
+    }
+    var page = document.querySelector('.page');
+    if (!page) return;
+
+    if (els.imageBtn) els.imageBtn.disabled = true;
+    showToast('正在生成图片…');
+
+    var fontsReady = document.fonts && document.fonts.ready
+      ? document.fonts.ready
+      : Promise.resolve();
+
+    fontsReady.then(function () {
+      return window.htmlToImage.toBlob(page, {
+        backgroundColor: '#FFF9EF',
+        pixelRatio: 2,
+        skipFonts: true,
+        cacheBust: true,
+        style: {
+          margin: '0',
+          width: page.offsetWidth + 'px',
+          backgroundColor: '#FFF9EF',
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(151, 116, 77, 0.12) 1px, transparent 0)',
+          backgroundSize: '22px 22px'
+        },
+        filter: function (node) {
+          if (!(node instanceof Element)) return true;
+          return !node.matches('.top-actions, .month-switch button, .today-jump, .tip-card, footer, .toast, dialog, .hero-add, .empty-add');
+        }
+      });
+    }).then(function (blob) {
+      if (!blob) throw new Error('empty image');
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'kids-calendar-' + view.year + '-' + pad(view.month + 1) + '.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      showToast('图片已导出');
+    }).catch(function () {
+      showToast('图片导出失败，可以改用打印 / PDF');
+    }).finally(function () {
+      if (els.imageBtn) els.imageBtn.disabled = false;
     });
   }
 
