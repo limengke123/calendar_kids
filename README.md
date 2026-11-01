@@ -41,12 +41,29 @@
 - 点日期添加期待；点贴纸编辑；支持删除
 - 每个期待可以设置：日期、名字、emoji、颜色、一句备注
 - 顶部「下一个期待」倒计时；右侧「接下来的期待」清单
+- 自动标注 24 个西方节日（英文名），可在设置里关闭
 - 自动保存在浏览器本地，刷新不丢
 - 设置孩子名字
 - 导出 / 导入 JSON 备份
 - 一键打印 / 另存为 PDF，专用 A4 横向打印样式
 - 手机、平板、桌面自适应
 - 零依赖、离线可用，不需要登录
+
+---
+
+## 西方节日
+
+默认开启。节日用 **英文名 + emoji** 标在日历上，也会出现在右侧清单里；带 `HOLIDAY` 标签的是自动节日，不能编辑。设置里可以一键关闭。
+
+**固定日期**：New Year's Day、Valentine's Day、St. Patrick's Day、April Fools' Day、Earth Day、May Day、Independence Day、Halloween、Guy Fawkes Night、Veterans Day、Christmas Eve、Christmas Day、Boxing Day、New Year's Eve
+
+**浮动日期**：MLK Day、Presidents' Day、Good Friday、Easter Sunday、Mother's Day、Memorial Day、Father's Day、Labor Day、Columbus Day、Thanksgiving
+
+日期惯例：
+
+- 母亲节、父亲节、感恩节、Memorial Day、Labor Day、MLK Day、Presidents' Day、Columbus Day 使用美国日期规则。
+- Guy Fawkes Night / Boxing Day 是英国节日；Veterans Day 在英联邦也叫 Remembrance Day。
+- 主倒计时优先你自己添加的期待；如果当月没有个人期待，会自动倒数下一个节日。
 
 ---
 
