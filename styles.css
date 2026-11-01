@@ -230,6 +230,7 @@ svg { display: block; }
 }
 
 .btn:active { transform: translateY(2px); box-shadow: none !important; }
+.btn:disabled { opacity: 0.55; cursor: wait; transform: none; }
 
 .btn .icon {
   width: 16px;
@@ -1278,6 +1279,9 @@ dialog[open] { animation: dialog-in 0.18s ease-out; }
 
   .top-actions { order: 4; width: 100%; }
   .top-actions .btn { flex: 1; }
+  .top-actions .btn-image { flex: 0 0 42px; padding: 0; }
+  .btn-image .image-label { display: none; }
+  .print-extra { display: none; }
 
   .hero {
     grid-template-columns: 1fr;
@@ -1321,6 +1325,7 @@ dialog[open] { animation: dialog-in 0.18s ease-out; }
 @media (max-width: 430px) {
   .top-actions { gap: 7px; }
   .btn { padding: 9px 10px; font-size: 11.5px; }
+  .top-actions .btn-image { padding: 0; }
   .btn .icon { width: 15px; height: 15px; }
   .hero h2 { font-size: 23px; }
   .day { min-height: 72px; }

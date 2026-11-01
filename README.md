@@ -46,6 +46,7 @@
 - 设置孩子名字
 - 导出 / 导入 JSON 备份
 - 一键打印 / 另存为 PDF，专用 A4 横向打印样式
+- 一键导出 PNG 图片（2x 分辨率，自动隐藏按钮和提示）
 - 手机、平板、桌面自适应
 - 零依赖、离线可用，不需要登录
 
@@ -103,6 +104,15 @@ python3 -m http.server 8080
 4. 建议关掉浏览器的页眉页脚，画面会更干净。
 
 打印版会隐藏所有按钮和提示，只保留：孩子名字 + 月份、倒计时一句话、月历、「接下来的期待」清单。
+
+### 导出图片
+
+点右上角「图片」按钮，会下载当前月份的 PNG：
+
+- 图片里会自动隐藏按钮、月份切换箭头和提示卡
+- 保留标题、倒计时、月历、右侧期待清单
+- 默认 2x 分辨率，适合发家庭群或做手机壁纸
+- 文件名：`kids-calendar-2026-11.png`
 
 ---
 
@@ -173,8 +183,9 @@ kids-calendar:v1
 ```
 index.html        页面结构
 styles.css        屏幕样式 + A4 打印样式
-app.js            日历渲染、事件增删改、localStorage、JSON 备份
+app.js            日历渲染、事件增删改、localStorage、JSON 备份、PNG 导出
 assets/favicon.svg
+vendor/           html-to-image（MIT，本地打包，无 CDN）
 design/           截图与打印预览
 .github/workflows/pages.yml
 ```
@@ -186,6 +197,7 @@ design/           截图与打印预览
 - 打印使用原生 `window.print()` + `@page { size: A4 landscape; }`，不引入 html2canvas / jsPDF，PDF 里的文字是矢量的。
 - 用户输入统一做 HTML 转义后再渲染。
 - 没有后端；GitHub Pages 只托管静态文件。
+- 图片导出使用本地打包的 `html-to-image`（MIT），通过 SVG foreignObject + Canvas 生成 PNG，不依赖外部 CDN。
 
 ---
 
