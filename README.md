@@ -162,24 +162,16 @@ design/           截图与打印预览
 
 ## 部署
 
-推送到 `main` 后，GitHub Actions 会自动部署：
+当前仓库已配置好：
 
-1. `.github/workflows/pages.yml` 检出代码。
-2. 把 `index.html`、`styles.css`、`app.js`、`assets/` 复制到 `_site`。
-3. 用 `peaceiris/actions-gh-pages` 把 `_site` 推送到 `gh-pages` 分支。
-4. GitHub Pages 从 `gh-pages` 分支根目录发布。
-
-第一次需要在仓库 **Settings → Pages** 里把 Source 设为：
-
-```
-Deploy from a branch
-Branch: gh-pages
-Folder: / (root)
-```
+- 推送到 `main` 后，`.github/workflows/pages.yml` 会把 `index.html`、`styles.css`、`app.js`、`assets/` 复制到 `_site`。
+- 用 `peaceiris/actions-gh-pages` 把 `_site` 推送到 `gh-pages` 分支。
+- GitHub Pages 的 Source 设置为 `Deploy from a branch` → `gh-pages` → `/ (root)`。
+- 每次推送到 `main`，Actions 都会自动更新 `gh-pages` 和线上页面。
 
 线上地址：**https://limengke123.github.io/calendar_kids/**
 
-之后每次推送到 `main`，Actions 都会自动更新 `gh-pages` 和线上页面。
+如果 fork 了这个仓库，需要在 **Settings → Pages** 里重新设置一次源分支。
 
 ---
 
