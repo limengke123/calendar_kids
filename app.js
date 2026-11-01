@@ -1075,7 +1075,7 @@
         },
         filter: function (node) {
           if (!(node instanceof Element)) return true;
-          return !node.matches('.top-actions, .month-switch button, .today-jump, .tip-card, footer, .toast, dialog, .hero-add, .empty-add');
+          return !node.matches('.top-actions, .month-switch button, .today-jump, .tip-card, footer, .toast, dialog, .hero-add, #empty-add');
         }
       });
     }).then(function (blob) {
