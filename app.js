@@ -56,6 +56,7 @@
     settingsDialog: document.getElementById('settings-dialog'),
     settingsForm: document.getElementById('settings-form'),
     childName: document.getElementById('child-name'),
+    showHolidays: document.getElementById('show-holidays'),
     exportBtn: document.getElementById('export-btn'),
     importBtn: document.getElementById('import-btn'),
     importFile: document.getElementById('import-file'),
@@ -71,6 +72,7 @@
   var selectedEmoji = EMOJIS[0];
   var selectedColor = 'mint';
   var toastTimer = null;
+  var HOLIDAY_CACHE = {};
 
   init();
 
@@ -87,7 +89,7 @@
     return {
       version: 1,
       childName: DEFAULT_NAME,
-      settings: { weekStart: 1, theme: 'cream' },
+      settings: { weekStart: 1, theme: 'cream', showHolidays: true },
       events: []
     };
   }
@@ -121,10 +123,13 @@
       });
     }
 
+    var settings = Object.assign({}, base.settings, raw.settings && typeof raw.settings === 'object' ? raw.settings : {});
+    if (typeof settings.showHolidays !== 'boolean') settings.showHolidays = true;
+
     return {
       version: 1,
       childName: name,
-      settings: Object.assign({}, base.settings, raw.settings && typeof raw.settings === 'object' ? raw.settings : {}),
+      settings: settings,
       events: events
     };
   }
@@ -245,6 +250,107 @@
       .sort(compareEvents);
   }
 
+  function addDays(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function nthWeekdayOfMonth(year, monthIndex, weekday, n) {
+    var first = new Date(year, monthIndex, 1);
+    var offset = (weekday - first.getDay() + 7) % 7;
+    return new Date(year, monthIndex, 1 + offset + (n - 1) * 7);
+  }
+
+  function lastWeekdayOfMonth(year, monthIndex, weekday) {
+    var last = new Date(year, monthIndex + 1, 0);
+    var offset = (last.getDay() - weekday + 7) % 7;
+    return new Date(year, monthIndex, last.getDate() - offset);
+  }
+
+  function easterSunday(year) {
+    var a = year % 19;
+    var b = Math.floor(year / 100);
+    var c = year % 100;
+    var d = Math.floor(b / 4);
+    var e = b % 4;
+    var f = Math.floor((b + 8) / 25);
+    var g = Math.floor((b - f + 1) / 3);
+    var h = (19 * a + b - d - g + 15) % 30;
+    var i = Math.floor(c / 4);
+    var k = c % 4;
+    var l = (32 + 2 * e + 2 * i - h - k) % 7;
+    var m = Math.floor((a + 11 * h + 22 * l) / 451);
+    var month = Math.floor((h + l - 7 * m + 114) / 31);
+    var day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+  }
+
+  function makeHoliday(def, date) {
+    return {
+      id: 'holiday-' + def.key + '-' + date.getFullYear(),
+      date: dateKey(date),
+      title: def.title,
+      emoji: def.emoji,
+      color: def.color || 'yellow',
+      note: def.note || '',
+      createdAt: 0,
+      isHoliday: true
+    };
+  }
+
+  function getHolidaysForYear(year) {
+    if (HOLIDAY_CACHE[year]) return HOLIDAY_CACHE[year];
+
+    var easter = easterSunday(year);
+    var defs = [
+      { key: 'new-year', title: "New Year's Day", emoji: '🎉', color: 'coral', date: new Date(year, 0, 1) },
+      { key: 'mlk-day', title: 'MLK Day', emoji: '🕊️', color: 'sky', note: 'Martin Luther King Jr. Day', date: nthWeekdayOfMonth(year, 0, 1, 3) },
+      { key: 'valentines', title: "Valentine's Day", emoji: '💝', color: 'coral', date: new Date(year, 1, 14) },
+      { key: 'presidents', title: "Presidents' Day", emoji: '🏛️', color: 'lav', note: "Washington's Birthday", date: nthWeekdayOfMonth(year, 1, 1, 3) },
+      { key: 'st-patricks', title: "St. Patrick's Day", emoji: '🍀', color: 'mint', date: new Date(year, 2, 17) },
+      { key: 'april-fools', title: "April Fools' Day", emoji: '🤡', color: 'yellow', date: new Date(year, 3, 1) },
+      { key: 'good-friday', title: 'Good Friday', emoji: '🌿', color: 'mint', date: addDays(easter, -2) },
+      { key: 'easter', title: 'Easter Sunday', emoji: '🐰', color: 'yellow', date: easter },
+      { key: 'earth-day', title: 'Earth Day', emoji: '🌍', color: 'mint', date: new Date(year, 3, 22) },
+      { key: 'may-day', title: 'May Day', emoji: '🌷', color: 'coral', date: new Date(year, 4, 1) },
+      { key: 'mothers-day', title: "Mother's Day", emoji: '💐', color: 'coral', note: 'Second Sunday in May (US)', date: nthWeekdayOfMonth(year, 4, 0, 2) },
+      { key: 'memorial-day', title: 'Memorial Day', emoji: '🎖️', color: 'sky', date: lastWeekdayOfMonth(year, 4, 1) },
+      { key: 'fathers-day', title: "Father's Day", emoji: '👔', color: 'sky', date: nthWeekdayOfMonth(year, 5, 0, 3) },
+      { key: 'independence', title: 'Independence Day', emoji: '🎆', color: 'coral', date: new Date(year, 6, 4) },
+      { key: 'labor-day', title: 'Labor Day', emoji: '🛠️', color: 'yellow', date: nthWeekdayOfMonth(year, 8, 1, 1) },
+      { key: 'columbus-day', title: 'Columbus Day', emoji: '⛵', color: 'sky', date: nthWeekdayOfMonth(year, 9, 1, 2) },
+      { key: 'halloween', title: 'Halloween', emoji: '🎃', color: 'coral', date: new Date(year, 9, 31) },
+      { key: 'guy-fawkes', title: 'Guy Fawkes Night', emoji: '🎇', color: 'lav', note: 'Bonfire Night (UK)', date: new Date(year, 10, 5) },
+      { key: 'veterans-day', title: 'Veterans Day', emoji: '🎖️', color: 'sky', note: 'Remembrance Day in the UK and Commonwealth', date: new Date(year, 10, 11) },
+      { key: 'thanksgiving', title: 'Thanksgiving', emoji: '🦃', color: 'yellow', note: 'Fourth Thursday in November (US)', date: nthWeekdayOfMonth(year, 10, 4, 4) },
+      { key: 'christmas-eve', title: 'Christmas Eve', emoji: '🕯️', color: 'yellow', date: new Date(year, 11, 24) },
+      { key: 'christmas', title: 'Christmas Day', emoji: '🎄', color: 'coral', date: new Date(year, 11, 25) },
+      { key: 'boxing-day', title: 'Boxing Day', emoji: '🎁', color: 'mint', note: 'UK', date: new Date(year, 11, 26) },
+      { key: 'new-years-eve', title: "New Year's Eve", emoji: '🎊', color: 'lav', date: new Date(year, 11, 31) }
+    ];
+
+    var list = defs.map(function (def) { return makeHoliday(def, def.date); });
+    list.sort(function (a, b) {
+      return a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'en');
+    });
+    HOLIDAY_CACHE[year] = list;
+    return list;
+  }
+
+  function getMonthHolidays(year, month) {
+    if (state.settings.showHolidays === false) return [];
+    var prefix = year + '-' + pad(month + 1);
+    return getHolidaysForYear(year).filter(function (holiday) {
+      return holiday.date.slice(0, 7) === prefix;
+    });
+  }
+
+  function compareItems(a, b) {
+    return a.date.localeCompare(b.date)
+      || (a.isHoliday ? 1 : 0) - (b.isHoliday ? 1 : 0)
+      || (a.createdAt || 0) - (b.createdAt || 0)
+      || a.title.localeCompare(b.title, 'en');
+  }
+
   function isPastMonth(year, month, today) {
     return year < today.getFullYear()
       || (year === today.getFullYear() && month < today.getMonth());
@@ -281,13 +387,20 @@
     var current = isCurrentMonth(year, month, today);
     var past = isPastMonth(year, month, today);
     var monthEvents = getMonthEvents(year, month);
-    var upcoming = getUpcomingEvents(monthEvents, today, current, past);
+    var monthHolidays = getMonthHolidays(year, month);
+    var monthItems = monthEvents.concat(monthHolidays).sort(compareItems);
+    var upcomingEvents = getUpcomingEvents(monthEvents, today, current, past);
+    var upcomingHolidays = getUpcomingEvents(monthHolidays, today, current, past);
+    var upcomingItems = upcomingEvents.concat(upcomingHolidays).sort(compareItems);
+    var nextPersonal = past ? null : (upcomingEvents[0] || null);
+    var nextHoliday = past ? null : (upcomingHolidays[0] || null);
+    var heroNext = nextPersonal || nextHoliday;
 
     renderHeader(year, month, current);
-    renderHero(monthEvents, upcoming, today, current, past);
+    renderHero(monthEvents, monthHolidays, nextPersonal, nextHoliday, today, current, past);
     renderWeekdays();
-    renderCalendar(year, month, monthEvents, today, current);
-    renderSidebar(monthEvents, upcoming, today, current, past);
+    renderCalendar(year, month, monthItems, today, current);
+    renderSidebar(monthItems, upcomingItems, heroNext ? heroNext.id : null, today, past);
     updateDocumentTitle();
   }
 
@@ -297,7 +410,16 @@
     els.todayJump.classList.toggle('hidden', current);
   }
 
-  function renderHero(monthEvents, upcoming, today, current, past) {
+  function heroSubText(monthEvents, monthHolidays) {
+    var parts = [];
+    if (monthEvents.length) parts.push('本月有 <b>' + monthEvents.length + '</b> 个小小期待');
+    if (monthHolidays.length) {
+      parts.push((parts.length ? '还有 ' : '本月有 ') + '<b>' + monthHolidays.length + '</b> 个节日');
+    }
+    return parts.length ? parts.join('，') + '。' : '';
+  }
+
+  function renderHero(monthEvents, monthHolidays, nextPersonal, nextHoliday, today, current, past) {
     if (current) {
       els.todayPill.innerHTML = '<span class="dot"></span> 今天 · '
         + (today.getMonth() + 1) + '月' + today.getDate() + '日 ' + formatWeekday(today);
@@ -307,9 +429,10 @@
     }
 
     if (past) {
+      var memoryCount = monthEvents.length + monthHolidays.length;
       els.heroTitle.textContent = '这个月已经过去啦';
-      if (monthEvents.length) {
-        els.heroSub.innerHTML = '这个月留下了 <b>' + monthEvents.length + '</b> 个小小回忆。点「今天」回去看看接下来的好事。';
+      if (memoryCount) {
+        els.heroSub.innerHTML = '这个月留下了 <b>' + memoryCount + '</b> 个小小回忆。点「今天」回去看看接下来的好事。';
       } else {
         els.heroSub.textContent = '这个月没有留下期待。点「今天」回去看看接下来的好事。';
       }
@@ -317,8 +440,8 @@
       return;
     }
 
-    if (upcoming.length) {
-      var next = upcoming[0];
+    var next = nextPersonal || nextHoliday;
+    if (next) {
       var nextDate = parseDateKey(next.date);
       var diff = nextDate ? dayDiff(today, nextDate) : 0;
       var label = '<em>' + escapeHtml(next.emoji) + ' ' + escapeHtml(next.title) + '</em>';
@@ -331,13 +454,13 @@
         els.heroTitle.innerHTML = '距离 ' + label + ' <span class="countdown-phrase">还有 <strong>' + diff + '</strong> 天</span>';
       }
 
-      els.heroSub.innerHTML = '本月有 <b>' + monthEvents.length + '</b> 个小小期待，慢慢等，都会来。';
+      els.heroSub.innerHTML = heroSubText(monthEvents, monthHolidays);
       els.heroAdd.classList.add('hidden');
       return;
     }
 
     els.heroAdd.classList.remove('hidden');
-    if (monthEvents.length) {
+    if (monthEvents.length || monthHolidays.length) {
       els.heroTitle.textContent = '这个月的期待都实现啦';
       els.heroSub.textContent = '再写一个新的期待，或者翻到下个月看看。';
       els.heroAdd.textContent = '＋ 再写一个期待';
@@ -354,42 +477,49 @@
     }).join('');
   }
 
-  function renderCalendar(year, month, monthEvents, today, current) {
-    var eventsByDate = {};
-    monthEvents.forEach(function (event) {
-      if (!eventsByDate[event.date]) eventsByDate[event.date] = [];
-      eventsByDate[event.date].push(event);
+  function renderCalendar(year, month, monthItems, today, current) {
+    var itemsByDate = {};
+    monthItems.forEach(function (item) {
+      if (!itemsByDate[item.date]) itemsByDate[item.date] = [];
+      itemsByDate[item.date].push(item);
     });
 
     var cells = monthGrid(year, month);
     els.days.innerHTML = cells.map(function (cell) {
-      var events = eventsByDate[cell.key] || [];
+      var items = itemsByDate[cell.key] || [];
+      var events = items.filter(function (item) { return !item.isHoliday; });
+      var holidays = items.filter(function (item) { return item.isHoliday; });
+      var hasEvents = events.length > 0;
+      var hasHolidays = holidays.length > 0;
       var isToday = current && cell.inMonth && sameDate(cell.date, today);
       var isWeekend = cell.date.getDay() === 0 || cell.date.getDay() === 6;
       var classes = ['day'];
       if (!cell.inMonth) classes.push('out');
       if (isWeekend) classes.push('weekend');
       if (isToday) classes.push('today');
-      if (events.length) {
+      if (hasEvents) {
         classes.push('cat-' + events[0].color);
-      } else {
-        classes.push('is-empty');
+      } else if (hasHolidays) {
+        classes.push('has-holiday');
       }
+      if (!hasEvents && !hasHolidays) classes.push('is-empty');
 
-      var detail = events.length
-        ? '，有 ' + events.length + ' 个期待'
-        : '，点击添加期待';
+      var detailParts = [];
+      if (hasEvents) detailParts.push(events.length + ' 个期待');
+      if (hasHolidays) detailParts.push(holidays.map(function (holiday) { return holiday.title; }).join(', '));
+      var detail = detailParts.length ? '，' + detailParts.join('，') : '，点击添加期待';
       var label = formatDateCN(cell.date) + ' ' + formatWeekday(cell.date)
         + (isToday ? '，今天' : '') + detail;
-      var interactive = events.length
-        ? ''
-        : ' role="button" tabindex="0"';
+      var interactive = hasEvents ? '' : ' role="button" tabindex="0"';
 
       return '<div class="' + classes.join(' ') + '"' + interactive + ' data-date="' + cell.key + '" aria-label="' + escapeAttr(label) + '">'
         + '<span class="day-num">' + cell.date.getDate() + '</span>'
         + (isToday ? '<span class="today-label">今天</span>' : '')
-        + (events.length
-          ? '<div class="day-events">' + events.map(eventChip).join('') + '</div>'
+        + (hasEvents || hasHolidays
+          ? '<div class="day-events">'
+            + events.map(eventChip).join('')
+            + holidays.map(holidayChip).join('')
+            + '</div>'
           : '')
         + '</div>';
     }).join('');
@@ -406,8 +536,15 @@
       + '</button>';
   }
 
-  function renderSidebar(monthEvents, upcoming, today, current, past) {
-    var list = past ? monthEvents : upcoming;
+  function holidayChip(holiday) {
+    return '<div class="holiday-chip" title="' + escapeAttr('西方节日：' + holiday.title) + '">'
+      + '<span class="ev-emoji" aria-hidden="true">' + escapeHtml(holiday.emoji) + '</span>'
+      + '<span class="ev-text">' + escapeHtml(holiday.title) + '</span>'
+      + '</div>';
+  }
+
+  function renderSidebar(monthItems, upcoming, heroNextId, today, past) {
+    var list = past ? monthItems : upcoming;
     els.upcomingTitle.textContent = past ? '这个月的期待' : '接下来的期待';
     els.upcomingCount.textContent = list.length + ' 个';
 
@@ -417,7 +554,7 @@
       if (past) {
         els.emptyText.textContent = '这个月没有留下期待';
         els.emptyAdd.textContent = '写下第一件好事 →';
-      } else if (monthEvents.length) {
+      } else if (monthItems.length) {
         els.emptyText.textContent = '这个月的期待都实现啦';
         els.emptyAdd.textContent = '再写一个期待 →';
       } else {
@@ -428,8 +565,8 @@
     }
 
     els.upcomingEmpty.classList.add('hidden');
-    els.upcomingList.innerHTML = list.map(function (event, index) {
-      var date = parseDateKey(event.date);
+    els.upcomingList.innerHTML = list.map(function (item) {
+      var date = parseDateKey(item.date);
       if (!date) return '';
       var diff = dayDiff(today, date);
       var countdown;
@@ -448,15 +585,27 @@
         if (diff <= 7) countdownClass = 'soon';
       }
 
-      var next = index === 0 && !past && diff >= 0;
-      var label = '编辑期待：' + formatDateCN(date) + ' ' + event.title;
-      var tooltip = event.title + (event.note ? ' · ' + event.note : '');
+      var next = !past && item.id === heroNextId;
+      var liClass = (item.isHoliday ? 'holiday-item' : '') + (next ? ' next' : '');
 
-      return '<li' + (next ? ' class="next"' : '') + '>'
-        + '<button type="button" class="up-item" data-event-id="' + escapeAttr(event.id) + '"'
+      if (item.isHoliday) {
+        return '<li' + (liClass ? ' class="' + liClass + '"' : '') + '>'
+          + '<div class="up-item" title="' + escapeAttr('西方节日：' + item.title + (item.note ? ' · ' + item.note : '')) + '">'
+          + '<span class="date-badge" aria-hidden="true"><span>' + (date.getMonth() + 1) + '月</span><strong>' + pad(date.getDate()) + '</strong></span>'
+          + '<span class="up-body"><p>' + escapeHtml(item.emoji) + ' ' + escapeHtml(item.title)
+          + '<span class="holiday-badge">HOLIDAY</span></p>'
+          + '<small>' + formatWeekday(date) + ' · <span class="' + countdownClass + '">' + countdown + '</span></small></span>'
+          + '</div></li>';
+      }
+
+      var label = '编辑期待：' + formatDateCN(date) + ' ' + item.title;
+      var tooltip = item.title + (item.note ? ' · ' + item.note : '');
+
+      return '<li' + (liClass ? ' class="' + liClass + '"' : '') + '>'
+        + '<button type="button" class="up-item" data-event-id="' + escapeAttr(item.id) + '"'
         + ' aria-label="' + escapeAttr(label) + '" title="' + escapeAttr(tooltip) + '">'
         + '<span class="date-badge" aria-hidden="true"><span>' + (date.getMonth() + 1) + '月</span><strong>' + pad(date.getDate()) + '</strong></span>'
-        + '<span class="up-body"><p>' + escapeHtml(event.emoji) + ' ' + escapeHtml(event.title) + '</p>'
+        + '<span class="up-body"><p>' + escapeHtml(item.emoji) + ' ' + escapeHtml(item.title) + '</p>'
         + '<small>' + formatWeekday(date) + ' · <span class="' + countdownClass + '">' + countdown + '</span></small></span>'
         + '</button></li>';
     }).join('');
@@ -555,6 +704,7 @@
       openEditDialog(eventButton.getAttribute('data-event-id'));
       return;
     }
+    if (event.target.closest('.holiday-chip')) return;
     var day = event.target.closest('.day');
     if (day && day.getAttribute('data-date')) {
       openAddDialog(day.getAttribute('data-date'));
@@ -725,6 +875,7 @@
 
   function openSettings() {
     els.childName.value = state.childName;
+    els.showHolidays.checked = state.settings.showHolidays !== false;
     openDialog(els.settingsDialog);
     window.setTimeout(function () { els.childName.focus(); els.childName.select(); }, 80);
   }
@@ -733,10 +884,11 @@
     event.preventDefault();
     var name = els.childName.value.trim().replace(/\s+/g, ' ').slice(0, 12);
     state.childName = name || DEFAULT_NAME;
+    state.settings.showHolidays = els.showHolidays.checked;
     var saved = saveState();
     closeDialog(els.settingsDialog);
     render();
-    if (saved) showToast('名字已保存');
+    if (saved) showToast('设置已保存');
   }
 
   function exportJson() {
@@ -785,6 +937,9 @@
       state.events = imported;
       if (data && !Array.isArray(data) && typeof data.childName === 'string' && data.childName.trim()) {
         state.childName = data.childName.trim().slice(0, 12);
+      }
+      if (data && !Array.isArray(data) && data.settings && typeof data.settings.showHolidays === 'boolean') {
+        state.settings.showHolidays = data.settings.showHolidays;
       }
       var saved = saveState();
       goToday();
