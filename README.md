@@ -41,7 +41,7 @@
 - 点日期添加期待；点贴纸编辑；支持删除
 - 每个期待可以设置：日期、名字、emoji、颜色、一句备注
 - 顶部「下一个期待」倒计时；右侧「接下来的期待」清单
-- 自动标注 12 个适合小朋友的西方节日（英文名），可在设置里关闭
+- 自动标注 24 个西方重要节日（英文名），可在设置里逐个选择显示 / 隐藏
 - 自动保存在浏览器本地，刷新不丢
 - 设置孩子名字
 - 导出 / 导入 JSON 备份
@@ -53,17 +53,26 @@
 
 ## 西方节日
 
-默认开启。只保留了气氛轻松、适合小朋友的 **12 个**节日，没有加入 Veterans Day、MLK Day、Memorial Day 这类公共事务 / 军事纪念日。
+默认**全部显示** 24 个重要的西方节日。节日用 **英文名 + emoji** 标在日历上，也会出现在右侧清单里；带 `HOLIDAY` 标签的是自动节日，不能直接编辑。
 
-节日用 **英文名 + emoji** 标在日历上，也会出现在右侧清单里；带 `HOLIDAY` 标签的是自动节日，不能编辑。设置里可以一键关闭。
+### 怎么删掉不想要的节日
 
-**固定日期**：New Year's Day、Valentine's Day、St. Patrick's Day、Independence Day、Halloween、Christmas Eve、Christmas Day、New Year's Eve
+1. 右上角「设置」。
+2. 在「显示西方节日」下方，取消勾选不想看的节日。
+3. 点「保存设置」。
 
-**浮动日期**：Easter Sunday、Mother's Day、Father's Day、Thanksgiving
+![在设置里选择要显示的节日](design/holiday-settings.png)
+
+支持「全选 / 清空」。取消勾选后，这个节日以后所有年份都不会再出现；重新勾选即可恢复。
+
+**固定日期**：New Year's Day、Valentine's Day、St. Patrick's Day、April Fools' Day、Earth Day、May Day、Independence Day、Halloween、Guy Fawkes Night、Veterans Day、Christmas Eve、Christmas Day、Boxing Day、New Year's Eve
+
+**浮动日期**：MLK Day、Presidents' Day、Good Friday、Easter Sunday、Mother's Day、Memorial Day、Father's Day、Labor Day、Columbus Day、Thanksgiving
 
 日期说明：
 
-- 母亲节、父亲节、感恩节使用美国日期规则；复活节按每年实际日期计算。
+- 母亲节、父亲节、感恩节、Memorial Day、Labor Day、MLK Day、Presidents' Day、Columbus Day 使用美国日期规则。
+- Guy Fawkes Night / Boxing Day 是英国节日；Veterans Day 在英联邦也叫 Remembrance Day。
 - 主倒计时优先你自己添加的期待；如果当月没有个人期待，会自动倒数下一个节日。
 
 ---

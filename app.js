@@ -57,6 +57,11 @@
     settingsForm: document.getElementById('settings-form'),
     childName: document.getElementById('child-name'),
     showHolidays: document.getElementById('show-holidays'),
+    holidayPicker: document.getElementById('holiday-picker'),
+    holidayList: document.getElementById('holiday-list'),
+    holidayCount: document.getElementById('holiday-count'),
+    selectAllHolidays: document.getElementById('select-all-holidays'),
+    clearHolidays: document.getElementById('clear-holidays'),
     exportBtn: document.getElementById('export-btn'),
     importBtn: document.getElementById('import-btn'),
     importFile: document.getElementById('import-file'),
@@ -74,10 +79,38 @@
   var toastTimer = null;
   var HOLIDAY_CACHE = {};
 
+  var HOLIDAY_DEFS = [
+    { key: 'new-year', title: "New Year's Day", emoji: '🎉', color: 'coral', dateHint: 'Jan 1', date: function (year) { return new Date(year, 0, 1); } },
+    { key: 'mlk-day', title: 'MLK Day', emoji: '🕊️', color: 'sky', dateHint: '3rd Mon Jan', note: 'Martin Luther King Jr. Day', date: function (year) { return nthWeekdayOfMonth(year, 0, 1, 3); } },
+    { key: 'valentines', title: "Valentine's Day", emoji: '💝', color: 'coral', dateHint: 'Feb 14', date: function (year) { return new Date(year, 1, 14); } },
+    { key: 'presidents', title: "Presidents' Day", emoji: '🏛️', color: 'lav', dateHint: '3rd Mon Feb', note: "Washington's Birthday", date: function (year) { return nthWeekdayOfMonth(year, 1, 1, 3); } },
+    { key: 'st-patricks', title: "St. Patrick's Day", emoji: '🍀', color: 'mint', dateHint: 'Mar 17', date: function (year) { return new Date(year, 2, 17); } },
+    { key: 'april-fools', title: "April Fools' Day", emoji: '🤡', color: 'yellow', dateHint: 'Apr 1', date: function (year) { return new Date(year, 3, 1); } },
+    { key: 'good-friday', title: 'Good Friday', emoji: '🌿', color: 'mint', dateHint: 'Easter - 2 days', date: function (year) { return addDays(easterSunday(year), -2); } },
+    { key: 'easter', title: 'Easter Sunday', emoji: '🐰', color: 'yellow', dateHint: 'Movable', date: function (year) { return easterSunday(year); } },
+    { key: 'earth-day', title: 'Earth Day', emoji: '🌍', color: 'mint', dateHint: 'Apr 22', date: function (year) { return new Date(year, 3, 22); } },
+    { key: 'may-day', title: 'May Day', emoji: '🌷', color: 'coral', dateHint: 'May 1', date: function (year) { return new Date(year, 4, 1); } },
+    { key: 'mothers-day', title: "Mother's Day", emoji: '💐', color: 'coral', dateHint: '2nd Sun May', note: 'Second Sunday in May (US)', date: function (year) { return nthWeekdayOfMonth(year, 4, 0, 2); } },
+    { key: 'memorial-day', title: 'Memorial Day', emoji: '🎖️', color: 'sky', dateHint: 'Last Mon May', date: function (year) { return lastWeekdayOfMonth(year, 4, 1); } },
+    { key: 'fathers-day', title: "Father's Day", emoji: '👔', color: 'sky', dateHint: '3rd Sun Jun', note: 'Third Sunday in June', date: function (year) { return nthWeekdayOfMonth(year, 5, 0, 3); } },
+    { key: 'independence', title: 'Independence Day', emoji: '🎆', color: 'coral', dateHint: 'Jul 4', date: function (year) { return new Date(year, 6, 4); } },
+    { key: 'labor-day', title: 'Labor Day', emoji: '🛠️', color: 'yellow', dateHint: '1st Mon Sep', date: function (year) { return nthWeekdayOfMonth(year, 8, 1, 1); } },
+    { key: 'columbus-day', title: 'Columbus Day', emoji: '⛵', color: 'sky', dateHint: '2nd Mon Oct', date: function (year) { return nthWeekdayOfMonth(year, 9, 1, 2); } },
+    { key: 'halloween', title: 'Halloween', emoji: '🎃', color: 'coral', dateHint: 'Oct 31', date: function (year) { return new Date(year, 9, 31); } },
+    { key: 'guy-fawkes', title: 'Guy Fawkes Night', emoji: '🎇', color: 'lav', dateHint: 'Nov 5', note: 'Bonfire Night (UK)', date: function (year) { return new Date(year, 10, 5); } },
+    { key: 'veterans-day', title: 'Veterans Day', emoji: '🎖️', color: 'sky', dateHint: 'Nov 11', note: 'Remembrance Day in the UK and Commonwealth', date: function (year) { return new Date(year, 10, 11); } },
+    { key: 'thanksgiving', title: 'Thanksgiving', emoji: '🦃', color: 'yellow', dateHint: '4th Thu Nov', note: 'Fourth Thursday in November (US)', date: function (year) { return nthWeekdayOfMonth(year, 10, 4, 4); } },
+    { key: 'christmas-eve', title: 'Christmas Eve', emoji: '🕯️', color: 'yellow', dateHint: 'Dec 24', date: function (year) { return new Date(year, 11, 24); } },
+    { key: 'christmas', title: 'Christmas Day', emoji: '🎄', color: 'coral', dateHint: 'Dec 25', date: function (year) { return new Date(year, 11, 25); } },
+    { key: 'boxing-day', title: 'Boxing Day', emoji: '🎁', color: 'mint', dateHint: 'Dec 26', note: 'UK', date: function (year) { return new Date(year, 11, 26); } },
+    { key: 'new-years-eve', title: "New Year's Eve", emoji: '🎊', color: 'lav', dateHint: 'Dec 31', date: function (year) { return new Date(year, 11, 31); } }
+  ];
+
   init();
 
   function init() {
     buildPickers();
+    buildHolidayPicker();
     bindEvents();
     render();
     window.setInterval(checkDateRollover, 60000);
@@ -89,7 +122,7 @@
     return {
       version: 1,
       childName: DEFAULT_NAME,
-      settings: { weekStart: 1, theme: 'cream', showHolidays: true },
+      settings: { weekStart: 1, theme: 'cream', showHolidays: true, hiddenHolidays: [] },
       events: []
     };
   }
@@ -125,6 +158,13 @@
 
     var settings = Object.assign({}, base.settings, raw.settings && typeof raw.settings === 'object' ? raw.settings : {});
     if (typeof settings.showHolidays !== 'boolean') settings.showHolidays = true;
+    if (!Array.isArray(settings.hiddenHolidays)) {
+      settings.hiddenHolidays = [];
+    } else {
+      settings.hiddenHolidays = settings.hiddenHolidays.filter(function (key) {
+        return typeof key === 'string';
+      }).slice(0, 100);
+    }
 
     return {
       version: 1,
@@ -250,6 +290,16 @@
       .sort(compareEvents);
   }
 
+  function addDays(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function lastWeekdayOfMonth(year, monthIndex, weekday) {
+    var last = new Date(year, monthIndex + 1, 0);
+    var offset = (last.getDay() - weekday + 7) % 7;
+    return new Date(year, monthIndex, last.getDate() - offset);
+  }
+
   function nthWeekdayOfMonth(year, monthIndex, weekday, n) {
     var first = new Date(year, monthIndex, 1);
     var offset = (weekday - first.getDay() + 7) % 7;
@@ -277,6 +327,7 @@
   function makeHoliday(def, date) {
     return {
       id: 'holiday-' + def.key + '-' + date.getFullYear(),
+      key: def.key,
       date: dateKey(date),
       title: def.title,
       emoji: def.emoji,
@@ -290,23 +341,9 @@
   function getHolidaysForYear(year) {
     if (HOLIDAY_CACHE[year]) return HOLIDAY_CACHE[year];
 
-    var easter = easterSunday(year);
-    var defs = [
-      { key: 'new-year', title: "New Year's Day", emoji: '🎉', color: 'coral', date: new Date(year, 0, 1) },
-      { key: 'valentines', title: "Valentine's Day", emoji: '💝', color: 'coral', date: new Date(year, 1, 14) },
-      { key: 'st-patricks', title: "St. Patrick's Day", emoji: '🍀', color: 'mint', date: new Date(year, 2, 17) },
-      { key: 'easter', title: 'Easter Sunday', emoji: '🐰', color: 'yellow', date: easter },
-      { key: 'mothers-day', title: "Mother's Day", emoji: '💐', color: 'coral', note: 'Second Sunday in May (US)', date: nthWeekdayOfMonth(year, 4, 0, 2) },
-      { key: 'fathers-day', title: "Father's Day", emoji: '👔', color: 'sky', note: 'Third Sunday in June', date: nthWeekdayOfMonth(year, 5, 0, 3) },
-      { key: 'independence', title: 'Independence Day', emoji: '🎆', color: 'coral', date: new Date(year, 6, 4) },
-      { key: 'halloween', title: 'Halloween', emoji: '🎃', color: 'coral', date: new Date(year, 9, 31) },
-      { key: 'thanksgiving', title: 'Thanksgiving', emoji: '🦃', color: 'yellow', note: 'Fourth Thursday in November (US)', date: nthWeekdayOfMonth(year, 10, 4, 4) },
-      { key: 'christmas-eve', title: 'Christmas Eve', emoji: '🕯️', color: 'yellow', date: new Date(year, 11, 24) },
-      { key: 'christmas', title: 'Christmas Day', emoji: '🎄', color: 'coral', date: new Date(year, 11, 25) },
-      { key: 'new-years-eve', title: "New Year's Eve", emoji: '🎊', color: 'lav', date: new Date(year, 11, 31) }
-    ];
-
-    var list = defs.map(function (def) { return makeHoliday(def, def.date); });
+    var list = HOLIDAY_DEFS.map(function (def) {
+      return makeHoliday(def, def.date(year));
+    });
     list.sort(function (a, b) {
       return a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'en');
     });
@@ -316,9 +353,11 @@
 
   function getMonthHolidays(year, month) {
     if (state.settings.showHolidays === false) return [];
+    var hidden = state.settings.hiddenHolidays || [];
     var prefix = year + '-' + pad(month + 1);
     return getHolidaysForYear(year).filter(function (holiday) {
-      return holiday.date.slice(0, 7) === prefix;
+      return holiday.date.slice(0, 7) === prefix
+        && hidden.indexOf(holiday.key) === -1;
     });
   }
 
@@ -627,6 +666,20 @@
     els.importBtn.addEventListener('click', function () { els.importFile.click(); });
     els.importFile.addEventListener('change', importJson);
 
+    els.showHolidays.addEventListener('change', updateHolidayPickerState);
+    els.selectAllHolidays.addEventListener('click', function () {
+      els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+        checkbox.checked = true;
+      });
+      updateHolidayPickerState();
+    });
+    els.clearHolidays.addEventListener('click', function () {
+      els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+        checkbox.checked = false;
+      });
+      updateHolidayPickerState();
+    });
+
     els.emojiRow.addEventListener('click', function (event) {
       var button = event.target.closest('.emoji-btn');
       if (!button) return;
@@ -720,6 +773,34 @@
     els.swatchRow.querySelectorAll('.swatch').forEach(function (button) {
       button.setAttribute('aria-pressed', String(button.getAttribute('data-color') === selectedColor));
     });
+  }
+
+  function buildHolidayPicker() {
+    els.holidayList.innerHTML = HOLIDAY_DEFS.map(function (def) {
+      return '<label class="holiday-option">'
+        + '<input type="checkbox" value="' + escapeAttr(def.key) + '">'
+        + '<span class="holiday-option-emoji" aria-hidden="true">' + escapeHtml(def.emoji) + '</span>'
+        + '<span class="holiday-option-text">'
+        + '<strong>' + escapeHtml(def.title) + '</strong>'
+        + '<small>' + escapeHtml(def.dateHint) + '</small>'
+        + '</span></label>';
+    }).join('');
+  }
+
+  function syncHolidayPicker() {
+    var hidden = state.settings.hiddenHolidays || [];
+    els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+      checkbox.checked = hidden.indexOf(checkbox.value) === -1;
+    });
+    updateHolidayPickerState();
+  }
+
+  function updateHolidayPickerState() {
+    var boxes = els.holidayList.querySelectorAll('input[type="checkbox"]');
+    var checked = 0;
+    boxes.forEach(function (checkbox) { if (checkbox.checked) checked += 1; });
+    els.holidayCount.textContent = checked + ' / ' + boxes.length + ' 个显示';
+    els.holidayPicker.classList.toggle('hidden', !els.showHolidays.checked);
   }
 
   function openAddDialog(dateString) {
@@ -854,6 +935,7 @@
   function openSettings() {
     els.childName.value = state.childName;
     els.showHolidays.checked = state.settings.showHolidays !== false;
+    syncHolidayPicker();
     openDialog(els.settingsDialog);
     window.setTimeout(function () { els.childName.focus(); els.childName.select(); }, 80);
   }
@@ -863,6 +945,10 @@
     var name = els.childName.value.trim().replace(/\s+/g, ' ').slice(0, 12);
     state.childName = name || DEFAULT_NAME;
     state.settings.showHolidays = els.showHolidays.checked;
+    state.settings.hiddenHolidays = [];
+    els.holidayList.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+      if (!checkbox.checked) state.settings.hiddenHolidays.push(checkbox.value);
+    });
     var saved = saveState();
     closeDialog(els.settingsDialog);
     render();
@@ -918,6 +1004,11 @@
       }
       if (data && !Array.isArray(data) && data.settings && typeof data.settings.showHolidays === 'boolean') {
         state.settings.showHolidays = data.settings.showHolidays;
+      }
+      if (data && !Array.isArray(data) && data.settings && Array.isArray(data.settings.hiddenHolidays)) {
+        state.settings.hiddenHolidays = data.settings.hiddenHolidays.filter(function (key) {
+          return typeof key === 'string';
+        }).slice(0, 100);
       }
       var saved = saveState();
       goToday();
