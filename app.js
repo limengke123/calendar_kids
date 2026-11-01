@@ -250,20 +250,10 @@
       .sort(compareEvents);
   }
 
-  function addDays(date, days) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-  }
-
   function nthWeekdayOfMonth(year, monthIndex, weekday, n) {
     var first = new Date(year, monthIndex, 1);
     var offset = (weekday - first.getDay() + 7) % 7;
     return new Date(year, monthIndex, 1 + offset + (n - 1) * 7);
-  }
-
-  function lastWeekdayOfMonth(year, monthIndex, weekday) {
-    var last = new Date(year, monthIndex + 1, 0);
-    var offset = (last.getDay() - weekday + 7) % 7;
-    return new Date(year, monthIndex, last.getDate() - offset);
   }
 
   function easterSunday(year) {
@@ -303,28 +293,16 @@
     var easter = easterSunday(year);
     var defs = [
       { key: 'new-year', title: "New Year's Day", emoji: '🎉', color: 'coral', date: new Date(year, 0, 1) },
-      { key: 'mlk-day', title: 'MLK Day', emoji: '🕊️', color: 'sky', note: 'Martin Luther King Jr. Day', date: nthWeekdayOfMonth(year, 0, 1, 3) },
       { key: 'valentines', title: "Valentine's Day", emoji: '💝', color: 'coral', date: new Date(year, 1, 14) },
-      { key: 'presidents', title: "Presidents' Day", emoji: '🏛️', color: 'lav', note: "Washington's Birthday", date: nthWeekdayOfMonth(year, 1, 1, 3) },
       { key: 'st-patricks', title: "St. Patrick's Day", emoji: '🍀', color: 'mint', date: new Date(year, 2, 17) },
-      { key: 'april-fools', title: "April Fools' Day", emoji: '🤡', color: 'yellow', date: new Date(year, 3, 1) },
-      { key: 'good-friday', title: 'Good Friday', emoji: '🌿', color: 'mint', date: addDays(easter, -2) },
       { key: 'easter', title: 'Easter Sunday', emoji: '🐰', color: 'yellow', date: easter },
-      { key: 'earth-day', title: 'Earth Day', emoji: '🌍', color: 'mint', date: new Date(year, 3, 22) },
-      { key: 'may-day', title: 'May Day', emoji: '🌷', color: 'coral', date: new Date(year, 4, 1) },
       { key: 'mothers-day', title: "Mother's Day", emoji: '💐', color: 'coral', note: 'Second Sunday in May (US)', date: nthWeekdayOfMonth(year, 4, 0, 2) },
-      { key: 'memorial-day', title: 'Memorial Day', emoji: '🎖️', color: 'sky', date: lastWeekdayOfMonth(year, 4, 1) },
-      { key: 'fathers-day', title: "Father's Day", emoji: '👔', color: 'sky', date: nthWeekdayOfMonth(year, 5, 0, 3) },
+      { key: 'fathers-day', title: "Father's Day", emoji: '👔', color: 'sky', note: 'Third Sunday in June', date: nthWeekdayOfMonth(year, 5, 0, 3) },
       { key: 'independence', title: 'Independence Day', emoji: '🎆', color: 'coral', date: new Date(year, 6, 4) },
-      { key: 'labor-day', title: 'Labor Day', emoji: '🛠️', color: 'yellow', date: nthWeekdayOfMonth(year, 8, 1, 1) },
-      { key: 'columbus-day', title: 'Columbus Day', emoji: '⛵', color: 'sky', date: nthWeekdayOfMonth(year, 9, 1, 2) },
       { key: 'halloween', title: 'Halloween', emoji: '🎃', color: 'coral', date: new Date(year, 9, 31) },
-      { key: 'guy-fawkes', title: 'Guy Fawkes Night', emoji: '🎇', color: 'lav', note: 'Bonfire Night (UK)', date: new Date(year, 10, 5) },
-      { key: 'veterans-day', title: 'Veterans Day', emoji: '🎖️', color: 'sky', note: 'Remembrance Day in the UK and Commonwealth', date: new Date(year, 10, 11) },
       { key: 'thanksgiving', title: 'Thanksgiving', emoji: '🦃', color: 'yellow', note: 'Fourth Thursday in November (US)', date: nthWeekdayOfMonth(year, 10, 4, 4) },
       { key: 'christmas-eve', title: 'Christmas Eve', emoji: '🕯️', color: 'yellow', date: new Date(year, 11, 24) },
       { key: 'christmas', title: 'Christmas Day', emoji: '🎄', color: 'coral', date: new Date(year, 11, 25) },
-      { key: 'boxing-day', title: 'Boxing Day', emoji: '🎁', color: 'mint', note: 'UK', date: new Date(year, 11, 26) },
       { key: 'new-years-eve', title: "New Year's Eve", emoji: '🎊', color: 'lav', date: new Date(year, 11, 31) }
     ];
 
