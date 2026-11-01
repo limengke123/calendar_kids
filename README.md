@@ -166,10 +166,20 @@ design/           截图与打印预览
 
 1. `.github/workflows/pages.yml` 检出代码。
 2. 把 `index.html`、`styles.css`、`app.js`、`assets/` 复制到 `_site`。
-3. 用 `configure-pages` 开启 Pages（如果还没开启）。
-4. 上传 artifact 并部署到 GitHub Pages。
+3. 用 `peaceiris/actions-gh-pages` 把 `_site` 推送到 `gh-pages` 分支。
+4. GitHub Pages 从 `gh-pages` 分支根目录发布。
+
+第一次需要在仓库 **Settings → Pages** 里把 Source 设为：
+
+```
+Deploy from a branch
+Branch: gh-pages
+Folder: / (root)
+```
 
 线上地址：**https://limengke123.github.io/calendar_kids/**
+
+之后每次推送到 `main`，Actions 都会自动更新 `gh-pages` 和线上页面。
 
 ---
 
