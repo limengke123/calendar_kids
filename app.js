@@ -328,7 +328,7 @@
       } else if (diff === 1) {
         els.heroTitle.innerHTML = '明天就是 ' + label + ' 啦！';
       } else {
-        els.heroTitle.innerHTML = '距离 ' + label + ' 还有 <strong>' + diff + '</strong> 天';
+        els.heroTitle.innerHTML = '距离 ' + label + ' <span class="countdown-phrase">还有 <strong>' + diff + '</strong> 天</span>';
       }
 
       els.heroSub.innerHTML = '本月有 <b>' + monthEvents.length + '</b> 个小小期待，慢慢等，都会来。';
